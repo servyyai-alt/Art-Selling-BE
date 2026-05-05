@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/Auth');
 
 // Add/update address
 router.post('/addresses', protect, async (req, res) => {

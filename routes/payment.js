@@ -5,7 +5,7 @@ const {
   verifyPayment,
   getRazorpayKey,
 } = require('../controllers/payementController');
-const { protect } = require('../middleware/auth');
+const { protect } = require('../middleware/Auth');
 
 router.get('/key', protect, getRazorpayKey);
 router.post('/create-order', protect, createRazorpayOrder);

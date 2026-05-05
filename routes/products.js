@@ -4,7 +4,7 @@ const {
   getProducts, getProduct, createProduct, updateProduct,
   deleteProduct, addReview, getMeta,
 } = require('../controllers/productController');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly } = require('../middleware/Auth');
 
 /**
  * @swagger
