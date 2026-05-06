@@ -3,10 +3,13 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const addressSchema = new mongoose.Schema({
-  street: String,
-  city: String,
-  state: String,
-  pincode: String,
+  label: { type: String, trim: true, default: '' },
+  name: { type: String, trim: true, default: '' },
+  phone: { type: String, trim: true, default: '' },
+  street: { type: String, trim: true, default: '' },
+  city: { type: String, trim: true, default: '' },
+  state: { type: String, trim: true, default: '' },
+  pincode: { type: String, trim: true, default: '' },
   country: { type: String, default: 'India' },
   isDefault: { type: Boolean, default: false },
 });

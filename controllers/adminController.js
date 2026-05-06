@@ -67,15 +67,62 @@ exports.getDashboard = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { page = 1, limit = 20, search } = req.query;
+    const pageNumber = Number(page);
+    const pageLimit = Number(limit);
     const query = search
       ? { $or: [{ name: { $regex: search, $options: 'i' } }, { email: { $regex: search, $options: 'i' } }] }
       : {};
     const total = await User.countDocuments(query);
     const users = await User.find(query)
       .sort('-createdAt')
-      .limit(Number(limit))
-      .skip((Number(page) - 1) * Number(limit));
-    res.json({ success: true, users, total });
+      .limit(pageLimit)
+      .skip((pageNumber - 1) * pageLimit)
+      .lean();
+
+    const userIds = users.map((user) => user._id);
+    const orderStats = await Order.aggregate([
+      { $match: { user: { $in: userIds } } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: '$user',
+          orderCount: { $sum: 1 },
+          totalSpent: { $sum: '$totalPrice' },
+          recentOrders: {
+            $push: {
+              _id: '$_id',
+              totalPrice: '$totalPrice',
+              orderStatus: '$orderStatus',
+              paymentStatus: '$paymentInfo.status',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+    ]);
+
+    const statsByUserId = new Map(
+      orderStats.map((stat) => [
+        stat._id.toString(),
+        {
+          orderCount: stat.orderCount,
+          totalSpent: stat.totalSpent,
+          recentOrders: stat.recentOrders.slice(0, 5),
+        },
+      ])
+    );
+
+    const usersWithOrders = users.map((user) => {
+      const stats = statsByUserId.get(user._id.toString());
+      return {
+        ...user,
+        orderCount: stats?.orderCount || 0,
+        totalSpent: stats?.totalSpent || 0,
+        recentOrders: stats?.recentOrders || [],
+      };
+    });
+
+    res.json({ success: true, users: usersWithOrders, total });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
