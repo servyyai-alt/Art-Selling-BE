@@ -10,7 +10,17 @@ exports.getProducts = async (req, res) => {
     } = req.query;
 
     const query = {};
-    if (keyword) query.$text = { $search: keyword };
+    if (keyword) {
+      const k = keyword.trim();
+      // Use case-insensitive regex search across common text fields so partial
+      // and mixed-case queries (e.g. "arjun" or "Arjun") match reliably.
+      query.$or = [
+        { title: { $regex: k, $options: 'i' } },
+        { artist: { $regex: k, $options: 'i' } },
+        { description: { $regex: k, $options: 'i' } },
+        { tags: { $elemMatch: { $regex: k, $options: 'i' } } },
+      ];
+    }
     if (category) query.category = category;
     if (artist) query.artist = { $regex: artist, $options: 'i' };
     if (minPrice || maxPrice) {

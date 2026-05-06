@@ -118,13 +118,44 @@ exports.getOrder = async (req, res) => {
 
 // @desc    Get all orders (admin)
 // @route   GET /api/orders
+// exports.getAllOrders = async (req, res) => {
+//   try {
+//     const orders = await Order.find({})
+//       .populate('user', 'name email')
+//       .sort({ createdAt: -1 });
+
+//     res.json({ success: true, orders });
+//   } catch (err) {
+//     res.status(500).json({ success: false, message: err.message });
+//   }
+// };
+
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find({})
-      .populate('user', 'name email')
-      .sort({ createdAt: -1 });
+    const { page = 1, limit = 10, status } = req.query;
 
-    res.json({ success: true, orders });
+    const query = {};
+
+    // ✅ Status filter (case-insensitive)
+    if (status) {
+      query.orderStatus = { $regex: `^${status}$`, $options: 'i' };
+    }
+
+    const orders = await Order.find(query)
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Order.countDocuments(query);
+
+    res.json({
+      success: true,
+      total,
+      page: Number(page),
+      pages: Math.ceil(total / limit),
+      orders,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
